@@ -42,16 +42,13 @@ def handle_event(
         return
 
     is_new = register_ip(redis_client, redis_key, event["device_ip"])
-    total = count_unique_ips(redis_client, redis_key)
 
     logger.info(
-        "Accepted timestamp=%s device_ip=%s error_code=%s "
-        "new_ip=%s global_unique_ips=%s",
+        "Accepted timestamp=%s device_ip=%s error_code=%s " "new_ip=%s",
         event["timestamp"].isoformat(),
         event["device_ip"],
         event["error_code"],
         is_new,
-        total,
     )
 
 

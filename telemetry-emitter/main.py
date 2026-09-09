@@ -16,9 +16,9 @@ from publisher import KafkaPublisher
 from telemetry import generate_event
 
 
-EVENTS_PER_SECOND = 300
+EVENTS_PER_SECOND = 1000
 PARTITIONS = 3
-REPORT_INTERVAL_SECONDS = 5
+REPORT_INTERVAL_SECONDS = 1
 
 logger = logging.getLogger(__name__)
 
