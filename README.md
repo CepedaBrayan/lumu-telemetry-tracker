@@ -16,14 +16,34 @@ Invalid events are logged and skipped. Redis failures are allowed to propagate s
 
 ```mermaid
 flowchart TD
-    E["Telemetry emitter"] --> K["Kafka: telemetry.events"]
-    K --> A["Receiver 1"]
-    K --> B["Receiver 2"]
-    K --> C["Receiver 3"]
-    A --> R["Redis set"]
-    B --> R
-    C --> R
-    S["Count script"] -->|SCARD| R
+    subgraph COMPOSE["Docker Compose"]
+        direction TD
+
+        E["Telemetry emitter"]
+        K["Kafka topic<br/>telemetry.events<br/>3 partitions"]
+
+        subgraph GROUP["Consumer group: telemetry-receptors"]
+            direction LR
+            A["Receiver 1"]
+            B["Receiver 2"]
+            C["Receiver 3"]
+        end
+
+        R["Redis set<br/>telemetry:unique_ips"]
+
+        E -->|"1,000 events/s<br/>round-robin"| K
+        K --> A
+        K --> B
+        K --> C
+
+        A -->|"SADD"| R
+        B -->|"SADD"| R
+        C -->|"SADD"| R
+    end
+
+    S["Local count script<br/>scripts/get_count.py"]
+
+    S -->|"SCARD through<br/>localhost:6379"| R
 ```
 
 - The emitter targets 1,000 events per second and distributes messages across three partitions.
