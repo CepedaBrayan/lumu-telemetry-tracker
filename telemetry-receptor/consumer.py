@@ -4,23 +4,28 @@ from collections.abc import Callable
 
 from confluent_kafka import Consumer, KafkaException
 
-
 logger = logging.getLogger(__name__)
 
 
 class KafkaReceiver:
-    def __init__(self, broker: str, topic: str, group: str):  # Configure the Kafka consumer instance!!!
+    def __init__(
+        self, broker: str, topic: str, group: str
+    ):  # Configure the Kafka consumer instance!!!
         self.topic = topic
-        self._consumer = Consumer({
-            "bootstrap.servers": broker,
-            "group.id": group,
-            "client.id": f"telemetry-receptor-{socket.gethostname()}",
-            "auto.offset.reset": "earliest",
-            "enable.auto.commit": False,
-            "enable.auto.offset.store": False,
-        })
+        self._consumer = Consumer(
+            {
+                "bootstrap.servers": broker,
+                "group.id": group,
+                "client.id": f"telemetry-receptor-{socket.gethostname()}",
+                "auto.offset.reset": "earliest",
+                "enable.auto.commit": False,
+                "enable.auto.offset.store": False,
+            }
+        )
 
-def run(self, handler: Callable[[bytes | None], None]) -> None:  # Consume messages and commit only after handling!!!
+    def run(
+        self, handler: Callable[[bytes | None], None]
+    ) -> None:  # Consume messages and commit only after handling!!!
         try:
             self._consumer.subscribe([self.topic])
             logger.info("Listening on topic=%s", self.topic)
