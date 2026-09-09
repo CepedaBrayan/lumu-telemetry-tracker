@@ -6,7 +6,7 @@ SERVICE ?=
 TAIL ?= 100
 
 .PHONY: help validate setup build run restart-apps stop status logs \
-	install-scripts count count-watch unit-tests
+	install-scripts count count-watch install-unit-tests unit-tests
 
 help:
 	@echo "make setup          Valida, descarga imágenes y construye"
