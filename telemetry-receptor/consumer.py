@@ -20,7 +20,7 @@ class KafkaReceiver:
             "enable.auto.offset.store": False,
         })
 
-    def run(self, handler: Callable[[bytes], None]) -> None:  # Consume messages and commit only after handling!!!
+def run(self, handler: Callable[[bytes | None], None]) -> None:  # Consume messages and commit only after handling!!!
         try:
             self._consumer.subscribe([self.topic])
             logger.info("Listening on topic=%s", self.topic)

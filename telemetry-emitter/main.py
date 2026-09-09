@@ -1,8 +1,8 @@
 """
 Assumptions:
 - Kafka already has a topic with exactly three partitions.
-- Target emission rate is 300 events per second, not a real-time guarantee.
-- Events use valid timestamps and a pool of 1,000 simulated IPv4 devices.
+- Target emission rate is 1,000 events per second, not a real-time guarantee.
+- Events use valid timestamps and a pool of 120,000,000 simulated IPv4 devices.
 - Repeated device IPs are intentional.
 - Events are distributed round-robin across the three partitions.
 [Lumu Challenge]
