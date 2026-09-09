@@ -1,0 +1,14 @@
+# Python cache directories
+__pycache__/
+
+# Python byte-compiled files
+*.py[cod]
+*$py.class
+
+# Pytest cache
+.pytest_cache/
+
+# Coverage files
+.coverage
+.coverage.*
+htmlcov/
