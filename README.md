@@ -47,7 +47,7 @@ The target rate is not a throughput guarantee. Container scheduling, synchronous
 | `telemetry-receptor/main.py` | Validation, storage orchestration, and event logging |
 | `telemetry-receptor/utils.py` | Timestamp parsing and event validation |
 | `telemetry-receptor/consumer.py` | Kafka polling and offset commits |
-| `telemetry-receptor/redis_store.py` | Redis connection, registration, and count operations |
+| `telemetry-receptor/redis_store.py` | Redis connection and IP registration operations |
 | `scripts/get_count.py` | Independent count and watch command |
 | `test/unit/` | Unit tests and test dependencies |
 | `makefile` | Build, runtime, test, and observation commands |
@@ -101,7 +101,7 @@ Expect one emitter, one Kafka broker, one Redis server, and three active receive
 make logs SERVICE=receptor TAIL=50
 ```
 
-Accepted-event logs include the normalized timestamp, device IP, error code, whether the IP was new, and the global count observed at query time. Invalid events produce a warning and are skipped.
+Accepted-event logs include the normalized timestamp, device IP, error code, and whether the IP was new. Invalid events produce a warning and are skipped.
 
 Press `Ctrl+C` to stop following logs. This does not stop the containers.
 
@@ -209,7 +209,7 @@ The local workload is controlled by the following settings:
 | `EVENTS_PER_SECOND` | `1000` | Target number of events published each second |
 | `PARTITIONS` | `3` | Number of Kafka topic partitions used for distribution |
 | `REPORT_INTERVAL_SECONDS` | `1` | Frequency of emitter progress reports |
-| `DEVICE_COUNT` | `100000000` | Size of the simulated device-address pool |
+| `DEVICE_COUNT` | `120000000` | Size of the simulated device-address pool |
 | `INVALID_EVENT_RATE` | `0.20` | Probability that a generated event is intentionally malformed |
 
 `EVENTS_PER_SECOND`, `PARTITIONS`, and `REPORT_INTERVAL_SECONDS` are configured in the emitter runtime module. `DEVICE_COUNT` controls the bounded address pool in `telemetry-emitter/telemetry.py`. `INVALID_EVENT_RATE` can be supplied through the emitter environment; its default is `0.20`.
@@ -262,13 +262,12 @@ For each valid event, the receiver:
 
 1. Decodes and validates the payload.
 2. Executes `SADD` against the shared Redis set.
-3. Reads `SCARD` for the demonstration log.
-4. Returns successfully from the handler.
-5. Commits the Kafka offset.
+3. Returns successfully from the handler.
+4. Commits the Kafka offset.
 
-`SADD` atomically inserts and deduplicates each IP. Its return value indicates whether the address was newly added. `SCARD` returns the total number of members in the set. Ten events containing the same valid IP therefore represent one unique device IP.
+`SADD` atomically inserts and deduplicates each IP. Its return value indicates whether the address was newly added. Ten events containing the same valid IP therefore represent one unique device IP.
 
-The insertion and count query are separate operations. A logged total may include IPs inserted concurrently by another receiver between those calls; it represents the global count at read time.
+`SCARD` is used by the independent count script (`scripts/get_count.py`) to read the global total on demand.
 
 If a receiver crashes after insertion but before committing its Kafka offset, the event can be replayed without inflating the count because insertion into a set is idempotent. If Redis raises an error, the handler fails and the current offset is not committed. This provides replay-safe insertion with at-least-once processing, not an exactly-once transaction spanning Kafka and Redis.
 
@@ -299,7 +298,7 @@ Committing every event synchronously makes the processing boundary easy to reaso
 
 ### Redis network traffic
 
-The demonstration performs `SADD` and `SCARD` for every valid event. The count is not required for ingestion, so at scale I would remove `SCARD` from the hot path and query it only from the independent observation command. Redis pipelines or bounded batches could reduce round trips for insertions.
+The ingestion path performs `SADD` for each valid event. At higher volumes, Redis pipelines or bounded batches could reduce round trips for insertions.
 
 ### Exact-set memory growth
 
