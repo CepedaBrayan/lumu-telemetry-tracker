@@ -11,39 +11,41 @@ ISO_PATTERN = re.compile(
 )
 
 
-def parse_timestamp(
-    value,
-) -> datetime:  # Normalize supported timestamps into an aware UTC datetime!!!
-    if isinstance(value, bool):
-        raise ValueError("Invalid timestamp type")
+def parse_timestamp(value) -> datetime:
+    """Normalize a supported timestamp into an aware UTC datetime."""
 
+    # Just accept numbers and strings - avoid bools bc they inherit from int
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        raise ValueError("Unsupported timestamp type")
+
+    # Handle strings
     if isinstance(value, str):
         value = value.strip()
 
-        if re.fullmatch(r"-?\d+", value):
-            value = int(value)
-        else:
-            if not ISO_PATTERN.fullmatch(value):
+        if not re.fullmatch(r"-?\d+(?:\.\d+)?", value):  # if the str isn't a num inside
+            if not ISO_PATTERN.fullmatch(value):  # if the string is not in ISO format
                 raise ValueError("Unsupported timestamp format")
 
-            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
 
-            if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=timezone.utc)
+            # Assume UTC when no timezone was provided.
+            if timestamp.tzinfo is None:
+                timestamp = timestamp.replace(tzinfo=timezone.utc)
 
-            return parsed.astimezone(timezone.utc)
+            return timestamp.astimezone(timezone.utc)
 
-    if isinstance(value, (int, float)):
-        if isinstance(value, float) and not math.isfinite(value):
-            raise ValueError("Timestamp must be finite")
+    # From here, values are numbers
+    numeric_value = float(value)
 
-        # Documented heuristic: large epoch values represent milliseconds.
-        if abs(value) >= 100_000_000_000:
-            return EPOCH + timedelta(milliseconds=value)
+    # Reject NaN and positive or negative infinity.
+    if not math.isfinite(numeric_value):
+        raise ValueError("Timestamp must be finite")
 
-        return EPOCH + timedelta(seconds=value)
+    # Interpret large epoch values as milliseconds.
+    if abs(numeric_value) >= 100_000_000_000:
+        numeric_value /= 1_000
 
-    raise ValueError("Unsupported timestamp type")
+    return EPOCH + timedelta(seconds=numeric_value)
 
 
 def validate_event(

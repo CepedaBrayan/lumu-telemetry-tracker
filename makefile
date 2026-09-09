@@ -5,12 +5,12 @@ COMPOSE := docker compose -f infra/docker-compose.yaml
 SERVICE ?=
 TAIL ?= 100
 
-.PHONY: help install-emitter install-receptor install-all \
-	validate setup build run restart-apps stop status logs count
+.PHONY: help validate setup build run restart-apps stop status logs \
+	install-scripts count count-watch unit-tests
 
 help:
-	@echo "make setup          Valida, descarga imagenes y construye"
-	@echo "make build          Reconstruye las imagenes Python"
+	@echo "make setup          Valida, descarga imágenes y construye"
+	@echo "make build          Reconstruye las imágenes Python"
 	@echo "make run            Levanta todos los servicios"
 	@echo "make restart-apps   Reinicia emitter y receptores"
 	@echo "make stop           Detiene todos los servicios"
@@ -20,6 +20,8 @@ help:
 	@echo "make install-scripts Instala las dependencias de los scripts"
 	@echo "make validate       Valida el archivo Compose"
 	@echo "make count          Muestra el conteo de IPs únicas"
+	@echo "make count-watch    Observa el conteo de IPs únicas"
+	@echo "make unit-tests     Ejecuta las pruebas unitarias"
 
 validate:
 	$(COMPOSE) config --quiet
@@ -54,3 +56,9 @@ count: install-scripts
 
 count-watch: install-scripts
 	$(PYTHON) scripts/get_count.py --watch
+
+install-unit-tests:
+	$(PYTHON) -m pip install -r test/unit/requirements.txt
+
+unit-tests: install-unit-tests
+	$(PYTHON) -m pytest -v -s test/unit
