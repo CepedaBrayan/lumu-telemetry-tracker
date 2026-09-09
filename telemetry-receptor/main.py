@@ -19,7 +19,7 @@ import socket
 from functools import partial
 
 from consumer import KafkaReceiver
-from redis_store import connect_redis, count_unique_ips, register_ip
+from redis_store import connect_redis, register_ip
 from utils import validate_event
 
 from redis import Redis

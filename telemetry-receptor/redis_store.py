@@ -28,7 +28,3 @@ def connect_redis(
 
 def register_ip(client: Redis, key: str, ip: str) -> bool:  # Atomically register an IP and report whether it is new!!!
     return client.sadd(key, ip) == 1
-
-
-def count_unique_ips(client: Redis, key: str) -> int:  # Retrieve the global unique IP count!!!
-    return client.scard(key)
